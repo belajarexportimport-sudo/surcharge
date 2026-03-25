@@ -50,11 +50,24 @@ class SurchargeApp {
         }
     }
 
+    formatRate(rate) {
+        if (!rate || rate === 'N/A' || rate === '-') return `<span style="color:var(--text-dim); font-style:italic;">Not Applicable</span>`;
+        
+        // Use color highlighting instead of bolding for better scanning
+        let formatted = rate.replace(/(IDR\s?[\d,.]+)/g, '<span style="color:white; font-weight:600;">$1</span>');
+        formatted = formatted.replace(/(\d+%)/g, '<span style="color:white; font-weight:600;">$1</span>');
+        
+        if (formatted.length > 50) {
+            return `<div class="rate-text" style="font-weight:400;">${formatted}</div>`;
+        }
+        return `<span style="font-weight:500; font-size:14px;">${formatted}</span>`;
+    }
+
     renderComparison() {
         let html = `
             <div class="header-section">
                 <h2>Comprehensive Comparison</h2>
-                <p class="section-desc">Full 2026 surcharge matrix categorized by service type.</p>
+                <p class="section-desc">Full 2026 surcharge matrix synchronized with latest logistic updates.</p>
             </div>
         `;
 
@@ -62,16 +75,16 @@ class SurchargeApp {
         
         categories.forEach(cat => {
             html += `
-                <div class="category-block" style="margin-top: 40px;">
-                    <h3 style="color: var(--primary); margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em;">${cat} Surcharges</h3>
-                    <div class="table-container glass" style="border-radius: 16px; overflow: hidden;">
+                <div class="category-block">
+                    <h3>${cat} Surcharges</h3>
+                    <div class="table-container glass">
                         <table class="comparison-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 25%">Surcharge Name</th>
-                                    <th style="width: 25%">DHL Express</th>
-                                    <th style="width: 25%">FedEx</th>
-                                    <th style="width: 25%">UPS</th>
+                                    <th style="width: 28%">Surcharge Category & Name</th>
+                                    <th style="width: 24%">DHL Express</th>
+                                    <th style="width: 24%">FedEx</th>
+                                    <th style="width: 24%">UPS</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -84,13 +97,13 @@ class SurchargeApp {
             });
 
             Array.from(names).sort().forEach(name => {
-                html += `<tr><td><strong>${name}</strong></td>`;
+                html += `<tr><td><small style="color:var(--primary-light); margin-bottom:4px; font-weight:700; text-transform:uppercase; font-size:10px; opacity:0.8;">${cat}</small><div style="font-weight:500; font-size:14.5px; color:white;">${name}</div></td>`;
                 ['dhl', 'fedex', 'ups'].forEach(cid => {
                     const surcharge = this.data.carriers[cid].surcharges.find(s => s.name === name);
                     if (surcharge) {
-                        html += `<td>${surcharge.rate}${surcharge.min ? `<br><small style="color:var(--text-muted)">Min: ${surcharge.min}</small>` : ''}</td>`;
+                        html += `<td>${this.formatRate(surcharge.rate)}${surcharge.min ? `<br><small>Min: ${surcharge.min}</small>` : ''}</td>`;
                     } else {
-                        html += `<td style="color: var(--text-muted); font-style: italic;">N/A</td>`;
+                        html += `<td>${this.formatRate(null)}</td>`;
                     }
                 });
                 html += `</tr>`;
@@ -173,11 +186,15 @@ class SurchargeApp {
             const c = this.data.carriers[res.id];
             html += `
                 <div class="surcharge-card" style="border-top: 4px solid ${c.color}">
-                    <h3 style="color: ${c.color}">${res.name}</h3>
+                    <span class="card-tag" style="background: ${c.color}22; color: ${c.color}">${res.name}</span>
+                    <h3 class="card-title">${res.name} Analysis</h3>
                     <div style="margin-top: 16px;">
                         ${res.items.length > 0 
-                            ? res.items.map(i => `<div style="color: #ef4444; font-size: 14px; margin-bottom: 8px;">● ${i}</div>`).join('')
-                            : '<div style="color: #10b981; font-size: 14px;">✓ No Handling Surcharges</div>'}
+                            ? res.items.map(i => `<div style="color: #fb7185; font-size: 14px; margin-bottom: 12px; display:flex; align-items:flex-start; gap:8px;">
+                                <span style="font-size:18px; line-height:1;">•</span>
+                                <div>${i}</div>
+                              </div>`).join('')
+                            : '<div style="color: #34d399; font-size: 14px; font-weight:600; display:flex; align-items:center; gap:8px;"> <span style="font-size:18px;">✓</span> No Handling Surcharges Detected</div>'}
                     </div>
                 </div>
             `;
@@ -207,15 +224,47 @@ class SurchargeApp {
                 <div class="surcharge-card">
                     <span class="card-tag" style="background: ${c.color}22; color: ${c.color}">${s.category}</span>
                     <h3 class="card-title">${s.name}</h3>
-                    <div class="card-rate">${s.rate}</div>
-                    ${s.min ? `<div class="card-min">Minimum: ${s.min}</div>` : ''}
-                    ${s.description ? `<p class="card-desc">${s.description}</p>` : ''}
+                    <div class="card-rate">${this.formatRate(s.rate)}</div>
+                    ${s.min ? `<div class="card-min" style="margin-top:10px; color:var(--text-muted); font-size:12px;">Minimum: ${s.min}</div>` : ''}
+                    ${s.description ? `<p class="card-desc" style="margin-top:16px;">${s.description}</p>` : ''}
                 </div>
             `;
         });
 
         html += `</div>`;
         this.elements.tabContent.innerHTML = html;
+    }
+
+    renderSearchResults() {
+        const results = [];
+        Object.values(this.data.carriers).forEach(c => {
+            c.surcharges.forEach(s => {
+                if (s.name.toLowerCase().includes(this.searchTerm) || (s.description && s.description.toLowerCase().includes(this.searchTerm))) {
+                    results.push({ ...s, carrier: c });
+                }
+            });
+        });
+
+        if (results.length === 0) return '';
+
+        let html = `
+            <div class="category-block" style="margin-top:60px;">
+                <h3>Search Results for "${this.searchTerm}"</h3>
+                <div class="card-grid">
+        `;
+
+        results.forEach(res => {
+            html += `
+                <div class="surcharge-card" style="border-top: 2px solid ${res.carrier.color}">
+                    <span class="card-tag" style="background: ${res.carrier.color}22; color: ${res.carrier.color}">${res.carrier.name}</span>
+                    <h3 class="card-title">${res.name}</h3>
+                    <div class="card-rate">${this.formatRate(res.rate)}</div>
+                </div>
+            `;
+        });
+
+        html += `</div></div>`;
+        return html;
     }
 }
 
