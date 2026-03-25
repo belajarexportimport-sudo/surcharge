@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surcharge Comparison Tool 2026</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <h1>Surcharge Log.</h1>
+                <p class="subtitle">2026 Comparison Tool</p>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="comparison">Comparison Table</button>
+                <button class="nav-btn" data-tab="calculator">Quick Calculator</button>
+                <button class="nav-btn" data-tab="dhl">DHL Express</button>
+                <button class="nav-btn" data-tab="fedex">FedEx</button>
+                <button class="nav-btn" data-tab="ups">UPS</button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="update-info">Updated: March 2026</div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="search-bar glass">
+                    <input type="text" id="main-search" placeholder="Search surcharge (e.g. Remote, Oversize, Weight)...">
+                </div>
+            </header>
+
+            <div id="tab-content" class="tab-content">
+                <!-- Content injected by JS -->
+            </div>
+        </main>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
